@@ -61,17 +61,35 @@ def createIndex(stopwords, pagesCollection, invertedIndex, titleIndex):
 		# add to index:
 		position = 0
 		for word in text_list:
-		# 1) lowercase all the words in the stream, 
+			# 1) lowercase all the words in the stream, 
 			word = word.lower()
-		# 2) obtain the tokens (strings of alphanumeric characters [a-z0-9], terminated by a non alphanumeric character) 
+			# 2) obtain the tokens (strings of alphanumeric characters [a-z0-9], terminated by a non alphanumeric character) 
 			word = ''.join(ch for ch in word if ch.isalnum()))
-		# 3) filter out all the tokens matching element of stopwords list
+			# 3) filter out all the tokens matching element of stopwords list
 			if word in stopWords_set:
 				continue
-		# 4) stem each remaining token using porter stemmer
+			# 4) stem each remaining token using porter stemmer
 			word = stem(word)
-			
+			# now put word in index which has structure: 
+				#{'word': [<#occurances>, [[pageID, <skiplist pointer(to be put later)>, [position for position in page]] for each pageID]}
+			if not word in index:
+				# create new entry in index:  occurances = 0
+				index[word] = [0,[]]
+			# increase number of occurances of word in dictionary
 
+			index[word][0] = index[word][0] + 1
+			postings = index[word][1]
+			# check if we need to add position to already posted document
+			if (len(postings) > 0) and (pageID == postings[len(postings)-1][0]):
+				# append position
+				positions = postings[len(postings)-1][1]
+				positions.append(position)
+			else:
+				# append document
+				postings.append([pageID, [position]])
+			# now just adjust position
+			position += 1
+				
 		
 		
 
