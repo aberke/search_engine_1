@@ -21,4 +21,6 @@ For create Index:
 queryIndex:
 - It looks like the boolean parser is only meant for python 2.5 and python 2.6, what if we're using a version of python 3?
 
+TODO: replace parser with more efficient method for reconstructing index
+
 
