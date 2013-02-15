@@ -19,7 +19,11 @@ For create Index:
 - why do you say we should concatenate the title with the text?
 
 queryIndex:
-- It looks like the boolean parser is only meant for python 2.5 and python 2.6, what if we're using a version of python 3?
+- It looks like the boolean parser is only meant for python 2.5 and python 2.6....and this is verified....does this mean you're always testing our projects using python 2.5 or 2.6?  Like I can make a point to test my code always with python 2.6, but how can I assure that the bash scripts also then always work?  ie, how can I assure that the default python to be used for our program is 2.6?
+
+- can we assume BQ's well crafted where none of the words are stopwords?  Like can we assume we'll never encounter 'is AND forever'?
+
+
 
 TODO: replace parser with more efficient method for reconstructing index
 
