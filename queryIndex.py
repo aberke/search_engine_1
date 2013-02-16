@@ -1,5 +1,7 @@
 # query index
 import sys
+# need sqrt and floor so that skips can occur every floor(sqrt(L)) pageID's where L = #pageID's
+from math import sqrt# used for calculating skip pointers
 import heapq # using heap to sort documents as find them
 from porter import stem #porter stemmer
 from bool_parser import bool_expr_ast # provided boolean parser for python2.6
@@ -81,13 +83,19 @@ def positions_AND(positions_1, positions_2):
 #		if false: returns the intersection over the pageID's and positions (where position_2 directly after position_1)
 
 # TODO: DEAL WITH UPDATING SKIP POINTERS IN INTERSECTION
-def pageIDs_AND(postings_1, postings_2, handle_bool):
-	intersection = []  # Even if just matching PageID's, I want this to still be a full postings list rather than just pageIDs so that we can continue to utilize skip-pointers in further iterations
+def postings_AND(postings_1, postings_2, handle_bool):
+	intersection = []  # Even if just matching PageID's, I want this to still be a full postings list rather than just pageIDs so that we can iterate on this function with ease
 	pageIndex_1 = 0
 	pageIndex_2 = 0
-	while (i_1 < len(postings_1)) and (i_2 < len(postings_2)):
-		post_1 = postings_1[i_1]
-		post_2 = postings_2[i_2]
+	length_1 = len(postings_1)
+	length_2 = len(postings_2)
+	# instead of storing skip pointers, we use skip pointers by just indexing in sqrt(len(list)) ahead to check if we should skip
+	skip_1 = int(sqrt(length_1)) # precalculated skip for postings_1
+	skip_2 = int(sqrt(length_2)) # precalculated skip for postings_2
+
+	while (pageIndex_1 < length_1) and (pageIndex_2 < length_2):
+		post_1 = postings_1[pageIndex_1]
+		post_2 = postings_2[pageIndex_2]
 		pageID_1 = post_1[0]
 		pageID_2 = post_2[0]
 		if pageID_1 == pageID_2: # pageID's match!
@@ -101,23 +109,33 @@ def pageIDs_AND(postings_1, postings_2, handle_bool):
 				position_intersection = positions_AND(positions_1, positions_2) # take intersection of positions lists
 				intersection.append([pageID_1, position_intersection])
 			# increment both page indecies
-			i_1 += 1 
-			i_2 += 1
+			pageIndex_1 += 1 
+			pageIndex_2 += 1
 		elif pageID_1 < pageID_2:
-			skip_pointer = post_1[1]# check if there's a skip pointer there
-			if skip_pointer and (postings_1[skip_pointer][0] <= pageID_2): 
+			# we'll either skip ahead in postings_1 or just increase its index by 1
+			skip_pointer = pageIndex_1 + skip_1
+			# check that skip_pointer doesn't exceed length and if its worth skipping to
+			if (skip_pointer < length_1) and (postings_1[skip_pointer][0] <= pageID_2): 
 				# skip to skip pointer!
-				i_1 = skip_pointer
-			else:
-				i_1 += 1
+				pageIndex_1 = skip_pointer
+			else: # no skip pointer, so just increase by 1
+				pageIndex_1 += 1
 		else: # pageID_1 > pageID_2
-			skip_pointer = post_2[1]
-			if skip_pointer and (postings_2[skip_pointer][0] <= pageID_1):
+			# we'll either skip ahead in postings_1 or just increase its index by 1
+			skip_pointer = pageIndex_2 + skip_2
+			if (skip_pointer < length_2) and (postings_2[skip_pointer][0] <= pageID_1):
 				# skip to skip pointer!
-				i_2 = skip_pointer
+				pageIndex_2 = skip_pointer
 			else:
-				i_2 += 1
+				pageIndex_2 += 1
 	return intersection
+
+# helper to handle_PQ -- handles the AND
+# takes two postings lists and returns the intersection over the pageID's and positions 
+#	(each entry (pageID, position) in postings_1 that appears in intersection, has a corresponding entry (pageID, position+1) that appears in postings_2)
+# uses helper function postings_AND which then also uses positions_AND
+def PQ_AND(postings_1, postings_2):
+	return postings_AND(postings_1, postings_2, false)
 
 # helper to handle_BQ -- handles the AND
 # takes two postings lists and returns the intersection over the pageID's

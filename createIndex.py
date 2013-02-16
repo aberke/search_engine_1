@@ -1,10 +1,6 @@
 # createIndex.py
 # file 1 for project
 
-# need sqrt and floor so that skips can occur every floor(sqrt(L)) pageID's where L = #pageID's
-from math import sqrt
-from math import floor
-
 from XMLparser import parse
 from XMLparser import tokenize
 from porter import stem
