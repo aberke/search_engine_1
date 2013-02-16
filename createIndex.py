@@ -79,7 +79,7 @@ def createIndex(stopwords_filename, pagesCollection_filename, ii_filename, ti_fi
 		position = 0
 		for token in token_list:
 			# now put word in index which has structure: 
-				#{'word': [[pageID, <skiplist pointer(to be put later)>, [position for position in page] for each pageID]}
+				#{'word': [[pageID, [position for position in page] for each pageID]}
 			if not word in index:
 				# create new entry in index:  
 				index[word] = [] # postings list initialized to empty list
@@ -101,37 +101,23 @@ def createIndex(stopwords_filename, pagesCollection_filename, ii_filename, ti_fi
 	# now the index is built
 	titleIndex_file.close() # done writing to titleIndex
 
-	# write out index in format:  word&pageID_0%skipToIndex%pos_0 pos_1&pageID_1 skipToIndex%pos_0 pos_1 pos2&pageID_2 skipToIndex skipToPageID%pos_0
+	# write out index in format:  word&pageID_0%pos_0 pos_1&pageID_1%pos_0 pos_1 pos2&pageID_2 pos_0
 
-	# print one line for each word in index and add skip list pointers while printing to file
+	# print one line for each word in index 
 	for word in index:
 		w_postings = index[word]
 		invertedIndex_file.write(word) # so far have: "word"
-		
-		# for adding skips need to know how often to skip and counter for when to skip
-		skip = int(floor(sqrt(len(w_postings))))
-		skip_count = 0
-
+	
 		for i in range(len(w_postings)):
 			post = w_postings[i]
 			page_ID = post[0]
 			positions = post[1]
 
 			invertedIndex_file.write("&"+str(page_ID))  # so far have: "word&page_ID"
-			if skip_count == skip:
-				# print skipToIndex 
-				skipToIndex = i+skip
-				if len(w_postings) > skipToIndex:  # checks that there's a next document to skip to
-					invertedIndex_file.write("%"+str(skipToIndex))  # so far have: "word&page_ID skipToIndex"
-				# reset skip counter
-				skip_count = 0
-			else: # increment skip_count
-				skip_count += 1	
-
 			# write out positions list
 			invertedIndex_file.write("%"+str(positions[0]))
 			for p in range(1, len(positions)):
-				invertedIndex_file.write(" "+str(positions[p])) # so far have: "word&page_ID skipToIndex%pos_0 pos_1 pos_2, ..."
+				invertedIndex_file.write(" "+str(positions[p])) # so far have: "word&page_ID%pos_0 pos_1 pos_2, ..."
 
 		invertedIndex_file.write('\n')
 	invertedIndex_file.close()
