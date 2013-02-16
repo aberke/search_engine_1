@@ -75,7 +75,30 @@ def reconstruct_Index(ii_filename):
 #								>>> postings_AND_positional(postings_AND_positional(index['Adventure'], index['Space']), index['2001'])
 #									  	where len(index['Adventure']) < len(index['Spage']) < len(index['2001'])
 def positions_AND(positions_1, positions_2):
-	pass
+	intersection = []
+	posIndex_1 = 0
+	posIndex_2 = 0
+	length_1 = len(positions_1)
+	length_2 = len(positions_2)
+
+	while (posIndex_1 < length_1) and (posIndex_2 < length_2):
+		position_1 = positions_1[posIndex_1]
+		position_2 = positions_2[posIndex_2]
+
+		if (position_1+1) == position_2:
+			# found a match!
+			intersection.append(position_2) # we append position 2 so that this can be called iteratively starting with the left-most position
+			# increment both indecies
+			posIndex_1 += 1
+			posIndex_2 += 1
+
+		elif (position_1+1) < position_2:
+			posIndex_1 += 1
+
+		else: # (position_1+1 > position_2)
+			posIndex_2 += 1
+
+	return intersection
 
 # helper to both handle_BQ and handle_PQ -- handles the AND
 # takes two postings lists and boolean where true means using for handle_BQ and false means using for handle_PQ:
@@ -104,10 +127,12 @@ def postings_AND(postings_1, postings_2, handle_bool):
 				intersection.append(post_1) # keep that post since it belongs in intersection
 			else: 
 				# we're also matching positions, so keep checking for match in positions
-				positions_1 = post_1[2]
-				positions_2 = post_2[2]
+				positions_1 = post_1[1]
+				positions_2 = post_2[1]
 				position_intersection = positions_AND(positions_1, positions_2) # take intersection of positions lists
-				intersection.append([pageID_1, position_intersection])
+				# only append to intersection if positions_intersection is a nonempty list
+				if position_intersection:
+					intersection.append([pageID_1, position_intersection])
 			# increment both page indecies
 			pageIndex_1 += 1 
 			pageIndex_2 += 1
