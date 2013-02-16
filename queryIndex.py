@@ -7,6 +7,33 @@ from bool_parser import bool_expr_ast # provided boolean parser for python2.6
 from createIndex import create_stopwords_set
 
 
+def test(f):
+	print('start')
+	l = f.readline()
+	count = 0
+	while l:
+		count +=1 
+		if l[:7]=='<text>' and not l[len(l)-9]=='</title>\n':
+			print(count)
+			print(line)
+		l = f.readline()
+	return
+
+
+#word&pageID_0%skipToIndex%pos_0 pos_1&pageID_1 skipToIndex%pos_0 pos_1 pos2&pageID_2 skipToIndex skipToPageID%pos_0
+
+# postings = []
+# word = ''
+# ch = 0
+# while(ch < len(line)):
+# 	while(line[ch] != '&')
+# 		word += line[ch]
+# 		ch += 1
+# 	post = []
+
+
+
+
 # reconstructs the invertedIndex that createIndex made by reading from file
 # input: filename of inverted index file
 # output: inverted index
@@ -18,7 +45,7 @@ def reconstruct_Index(ii_filename):
 	line = ii_file.readline()
 	while line != '': # read to EOF
 		# TODO: REPLACE THIS WITH MORE EFFICIENT PARSER
-		l = line.split('&') # split along the postings delimeter 
+		l = line.split('&') # split along the postings delimeter   [word, [post0],[post1],...]
 		
 		# extract word 
 		word = l[0]

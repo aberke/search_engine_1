@@ -5,7 +5,7 @@
 from math import sqrt
 from math import floor
 
-from XMLparser import parse
+from XMLparser import parse, tokenize
 from porter import stem
 
 # input: filename (fname) of the stopWords file
@@ -62,28 +62,22 @@ def createIndex(stopwords_filename, pagesCollection_filename, ii_filename, ti_fi
 	index = {}
 
 	# obtain dictionary mapping pageID's to tuple (list of title words, list of title and text words)
-	#collection = parse(pagesCollection)
-	collection = fakeParse()
+	collection = parse(pagesCollection)
+	#collection = fakeParse()
 	# iterate over keys (pageID's) to fill the index
 	for pageID in collection:
-		title_list = collection[pageID][0]
-		text_list = collection[pageID][1]
+		titleString = collection[pageID][0]
+		textString = collection[pageID][1]
 		
 		# add to titleIndex:
 		titleIndex_append(titleIndex_file, pageID, title_list)
 
+		# tokenize titleString
+		token_list = tokenize(stopWords_set, textString)
+
 		# add to index:
 		position = 0
-		for word in text_list:
-			# 1) lowercase all the words in the stream, 
-			word = word.lower()
-			# 2) obtain the tokens (strings of alphanumeric characters [a-z0-9], terminated by a non alphanumeric character) 
-			word = ''.join(ch for ch in word if ch.isalnum())
-			# 3) filter out all the tokens matching element of stopwords list
-			if word in stopWords_set:
-				continue
-			# 4) stem each remaining token using porter stemmer
-			word = stem(word)
+		for token in token_list:
 			# now put word in index which has structure: 
 				#{'word': [[pageID, <skiplist pointer(to be put later)>, [position for position in page] for each pageID]}
 			if not word in index:
