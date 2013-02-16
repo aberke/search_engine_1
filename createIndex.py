@@ -5,7 +5,8 @@
 from math import sqrt
 from math import floor
 
-from XMLparser import parse, tokenize
+from XMLparser import parse
+from XMLparser import tokenize
 from porter import stem
 
 # input: filename (fname) of the stopWords file
@@ -30,13 +31,8 @@ def create_stopwords_set(fname):
 # -- just print them out
 #
 # input: open file to write to, pageID, title as output from parsing the xml file
-def titleIndex_append(f, pageID, title):
-	f.write(str(pageID)+' ')
-	for w in title:
-		if w[len(w)-1] == '\n':
-			w = w[:len(w)-1] # strip off '\n'
-		f.write(w+' ')
-	f.write('\n')	
+def titleIndex_append(f, pageID, titleString):
+	f.write(str(pageID)+' '+titleString+'\n')
 
 
 def fakeParse():
@@ -44,7 +40,7 @@ def fakeParse():
 	for i in range(10):
 		s = "This is the number "+str(i)
 		s_text = "Even though I said +"+str(i)+", really "+str(i-1)+" is my favorite number"
-		d[i] = (s.split(), s.split()+s_text.split())
+		d[i] = (s, s+'\n'+s_text)
 	return d
 
 
@@ -62,15 +58,15 @@ def createIndex(stopwords_filename, pagesCollection_filename, ii_filename, ti_fi
 	index = {}
 
 	# obtain dictionary mapping pageID's to tuple (list of title words, list of title and text words)
-	collection = parse(pagesCollection)
-	#collection = fakeParse()
+	#collection = parse(pagesCollection)
+	collection = fakeParse()
 	# iterate over keys (pageID's) to fill the index
 	for pageID in collection:
 		titleString = collection[pageID][0]
 		textString = collection[pageID][1]
 		
 		# add to titleIndex:
-		titleIndex_append(titleIndex_file, pageID, title_list)
+		titleIndex_append(titleIndex_file, pageID, titleString)
 
 		# tokenize titleString
 		token_list = tokenize(stopWords_set, textString)
@@ -78,14 +74,14 @@ def createIndex(stopwords_filename, pagesCollection_filename, ii_filename, ti_fi
 		# add to index:
 		position = 0
 		for token in token_list:
-			# now put word in index which has structure: 
-				#{'word': [[pageID, [position for position in page] for each pageID]}
-			if not word in index:
+			# now put word/token in index which has structure: 
+				#{'token': [[pageID, [position for position in page] for each pageID]}
+			if not token in index:
 				# create new entry in index:  
-				index[word] = [] # postings list initialized to empty list
+				index[token] = [] # postings list initialized to empty list
 			
 
-			postings = index[word]
+			postings = index[token]
 			# check if we need to add position to already posted document
 			if (len(postings) > 0) and (pageID == postings[len(postings)-1][0]):
 				# append position

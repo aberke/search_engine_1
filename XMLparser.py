@@ -18,7 +18,7 @@ def tokenize(stopWords_set, textString):
     # 3) filter out all the tokens matching element of stopwords list
     for word in text_list:
         if not word in stopWords_set:
-            word = stem(word)
+            word = stemToken(word)
             token_list.append(word)
     return token_list
 
@@ -60,7 +60,7 @@ def parse(fname):
         textString = titleString 
         textSTring += ' '+currLine
 
-        word: (pageID, titleString, textString)
+        #word: (pageID, titleString, textString)
 
         # title = currLine # Save title in original form
         # currLine = re.sub('[^0-9a-zA-Z]+', ' ', currLine) #remove all non-alphanumeric characters
