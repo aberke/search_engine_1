@@ -20,7 +20,7 @@ def test(f):
 	return
 
 
-#word&pageID_0%skipToIndex%pos_0 pos_1&pageID_1 skipToIndex%pos_0 pos_1 pos2&pageID_2 skipToIndex skipToPageID%pos_0
+#word&pageID_0%pos_0 pos_1&pageID_1%pos_0 pos_1 pos2&pageID_2%pos_0
 
 # postings = []
 # word = ''
@@ -54,12 +54,8 @@ def reconstruct_Index(ii_filename):
 		postings = []
 		for i in range(1, len(l)):
 			p = l[i].split('%')
-			if len(p) == 2:
-				positions = [int(pos) for pos in p[1].split()]
-				posting = [int(p[0]), 0, positions] # posting = [pageID, 0] where 0 means that there is no skip pointer here
-			else:
-				positions = [int(pos) for pos in p[2].split()]
-				posting = [int(p[0]), int(p[1]), positions] # posting = [pageID, skip2Index]
+			positions = [int(pos) for pos in p[1].split()]
+			posting = [int(p[0]), positions] # posting = [pageID, positions] 
 			postings.append(posting)
 		
 		index[word] = postings
