@@ -8,33 +8,7 @@ from bool_parser import bool_expr_ast # provided boolean parser for python2.6
 
 from createIndex import create_stopwords_set
 
-
-def test(f):
-	print('start')
-	l = f.readline()
-	count = 0
-	while l:
-		count +=1 
-		if l[:7]=='<text>' and not l[len(l)-9]=='</title>\n':
-			print(count)
-			print(line)
-		l = f.readline()
-	return
-
-
 #word&pageID_0%pos_0 pos_1&pageID_1%pos_0 pos_1 pos2&pageID_2%pos_0
-
-# postings = []
-# word = ''
-# ch = 0
-# while(ch < len(line)):
-# 	while(line[ch] != '&')
-# 		word += line[ch]
-# 		ch += 1
-# 	post = []
-
-
-
 
 # reconstructs the invertedIndex that createIndex made by reading from file
 # input: filename of inverted index file
@@ -169,7 +143,13 @@ def BQ_AND(postings_1, postings_2):
 	return postings_AND(postings_1, postings_2, true)
 
 
-def BQ_OR(postings_1, postings_2):
+def postings_OR(postings_1, postings_2):
+	# if one of the postings is empty, trivially return other postings list
+	if not postings_1:
+		return postings_2
+	if not postings_2:
+		return postings_1
+
 	union = [] # I want this to still be a full postings list rather than just pageIDs so that we can continue to utilize skip-pointers in further iterations
 	i_1 = 0
 	i_2 = 0
@@ -219,37 +199,12 @@ def handle_BQ(stopwords_set, index, query):
 	# eg, for >>> bool_expr_ast('here AND there\n AND again')
 	#			('AND', ['here', 'there', 'again'])
 
-	# use helper functions BQ_AND and BQ_OR
+	# use helper functions BQ_AND and postings_OR
 
 	return
 
 
 
-# input: set of stopwords (stopwords_set)
-#		 inverted index (index)
-# 		 query (query) -- from which we obtain list of stream of words (stream_list) [t0, t1, t2, ..., tk]
-# output: prints out the matching documents in order of pageID
-# 			for FTQ matching documents contain at least one word whose stemmed version is one of the ti's
-def handle_FTQ(stopwords_set, index, query):
-
-	stream_list = query_to_stream(stopwords_set, query)
-	documents_set = set() # set allow to quickly check if document already in heap
-	documents_heap = [] # heap allows us to sort document ID's as we go
-
-	for term in stream_list:
-		if term in index:
-			postings = index[term][1]
-			for post in postings:
-				pageID = post[0]
-				if not pageID in documents_set:
-					documents_set.add(pageID)
-					heapq.heappush(documents_heap, pageID)
-	documents = ''
-	for i in range(len(h)):
-		pageID = heapq.heappop(h)
-		documents += str(pageID)+' '
-	
-	return documents
 
 
 # input: set of stopwords (stopwords_set)
@@ -259,10 +214,19 @@ def handle_FTQ(stopwords_set, index, query):
 # 			for FTQ matching documents contain subsequence [t1, t2, .., tk] in this order with adjacent terms
 def handle_PQ(stopwords_set, index, query):
 	# obtain stream of terms from query -- also handles removing operators "" and newline '\n'
-	stream_list = query_to_stream(stopwords_set, query)
+	stream_list = tokenize(stopwords_set, query)
 	if not len(stream_list):
 		# there were no tokens in the stream
 		return ''
+
+	documents = [] #initialize empty list of pageIDs
+
+	intersection = index[stream_list[0]]
+
+	for token in stream_list:
+		pass
+
+
 	documents_set = set() # set allow to quickly check if document already in heap
 	documents_heap = [] # heap allows us to sort document ID's as we go	
 
@@ -278,27 +242,32 @@ def handle_PQ(stopwords_set, index, query):
 
 	return
 
-# sanitizes the query into a stream of tokens (for OWQ, FTQ, AND PQ)
 # input: set of stopwords (stopwords_set)
-#		 query (query) to sanitize to stream of tokens
-# output: stream of tokens in list form
-def query_to_stream(stopwords_set, query):
-	stream_list = []
-	query_list = query.split() #split query into list of words
-	for word in query_list:
-		# lowercase all the words in the query
-		word = word.lower()
-		# obtain all the tokens in the stream
-		word = ''.join(ch for ch in word if ch.isalnum())
-		# filter out stopwords
-		if word in stopwords_set or word == '':
-			continue
-		# stem token
-		word = stem(word)
-		# add resulting token to stream of tokens
-		stream_list.append(word)
+#		 inverted index (index)
+# 		 query (query) -- from which we obtain list of stream of words (stream_list) [t0, t1, t2, ..., tk]
+# output: prints out the matching documents in order of pageID
+# 			for FTQ matching documents contain at least one word whose stemmed version is one of the ti's
+def handle_FTQ(stopwords_set, index, query):
+	# turn query into stream of tokens
+	stream_list = query_to_stream(stopwords_set, query)
+	stream_length = len(stream_list)
+	if not stream_length: # make sure we got some tokens out of that query
+		return ''
+	# initialize union to empty list
+	union = []
 
-	return stream_list
+	for i in range(stream_length):
+		word = stream_list[i]
+		if word in index:
+			union = postings_OR(union, index[word])
+
+	documents = ''
+	for j in range(len(union)):
+		if j > 0:
+			documents += ' '
+		pageID = union[j][0]
+		documents += str(pageID)	
+	return documents
 
 
 # helper routine to queryIndex -- determines type of query and passes off to further handling
@@ -308,11 +277,11 @@ def handle_query(stopwords_set, index, query):
 		# handle BQ in its own way
 		return handle_BQ(stopwords_set, index, query)
 
-	if query[0]=='"' and query[len(s1)-1]=='"':
+	if query[0]=='"' and query[len(s1)-1]=='"': # it's a PQ
 		return handle_PQ(stopwords_set, index, query)
 		
-	
-	return handle_FTQ(stopwords_set, index, query)
+	else: # it's a OWQ or FTQ
+		return handle_FTQ(stopwords_set, index, query)
 
 # main function
 def queryIndex(stopwords_filename, ii_filename, ti_filename):
