@@ -29,15 +29,9 @@ def tokenize(stopWords_set, textString):
 
 def parse(fname):
     f = open(fname)
-    #f = open("sampleTextCollection.dat")
-    stopWordsFile = open("stopWords.dat")
-    stopWords = []
     pageID = ""
     dictionary = {} #dictionary initially empty
 
-    # Initialize stopWords list
-    for line in stopWordsFile:
-        stopWords.append(line)
 
     # loop through entire document by line
     currLine = f.readline()
@@ -56,46 +50,22 @@ def parse(fname):
 
         titleString = currLine[7:len(currLine)-9]+'\n'
 
-
+        #Do we need to remove the \n we added to the titleString??
         textString = titleString 
-        textSTring += ' '+currLine
-
-        #word: (pageID, titleString, textString)
-
-        # title = currLine # Save title in original form
-        # currLine = re.sub('[^0-9a-zA-Z]+', ' ', currLine) #remove all non-alphanumeric characters
-        # currLine = currLine.lower()     #convert to all lowercase
-        # possibleNewWords = currLine.split()
-        # for currToken in possibleNewWords:      # Remove stop words
-        #     if stopWords.count(currToken) == 0:
-        #         currToken = stemToken(currToken)
-        #         wordsList.append(currToken)
 
         while (not "<text>" in currLine): currLine = f.readline()
         # now we've reached the <text> section, so iterate through lines until reaching the end at </text>
         currLine = currLine.replace("<text>", "")
         while (not "</text>" in currLine):
-            currLine = re.sub('[^0-9a-zA-Z]+', ' ', currLine)
-            currLine = currLine.lower()
-            possibleNewWords = currLine.split()
-            for currToken in possibleNewWords:         # Remove stop words
-                if stopWords.count(currToken) == 0:
-                    currToken = stemToken(currToken)
-                    wordsList.append(currToken)
+            textString == textString + currLine
             currLine = f.readline()
 
         #now we know we've reached the last line of </text>
         currLine = currLine.replace("</text>", "")
-        currLine = re.sub('[^0-9a-zA-Z]+', ' ', currLine)
-        currLine = currLine.lower()
-        possibleNewWords = currLine.split()
-        for currToken in possibleNewWords:          # Remove stop words
-            if stopWords.count(currToken) == 0:
-                currToken = stemToken(currToken)
-                wordsList.append(currToken)
+        textString == textString + currLine
 
-        wordsTuple = title, wordsList
-        dictionary.update({pageID:wordsTuple})  #add entry for this page into dictionary
+        titleTextTuple = titleString, textString
+        dictionary.update({pageID:titleTextTuple})  #add entry for this page into dictionary
         currLine = f.readline()
 
     return dictionary
