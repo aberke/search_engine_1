@@ -19,7 +19,7 @@ def create_stopwords_set(fname):
         w = f.readline()
     f.close()
     return stopWords_set 
-    
+
 # input: string to turn into list of tokens
 # output: list of tokens
 def tokenize(stopWords_set, textString):
@@ -73,12 +73,12 @@ def parse(fname):
         # now we've reached the <text> section, so iterate through lines until reaching the end at </text>
         currLine = currLine.replace("<text>", "")
         while (not "</text>" in currLine and currLine):
-            textString == textString + currLine
+            textString = textString + currLine
             currLine = f.readline()
 
         #now we know we've reached the last line of </text>
         currLine = currLine.replace("</text>", "")
-        textString == textString + currLine
+        textString = textString + currLine
 
         titleTextTuple = titleString, textString
         dictionary.update({pageID:titleTextTuple})  #add entry for this page into dictionary
