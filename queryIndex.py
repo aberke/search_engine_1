@@ -43,13 +43,14 @@ def reconstruct_Index(ii_filename):
 
 # helper functions to 
 # input: two positions lists: positions_1 corresponds to the positions list of the first word, positions_2 corresponds to the positions list of second word
+#		 i_difference: (index of token2) - (index of token1) in the query.  Essentially, the positional difference of the two tokens
 # output: new (intersection) positions list that contains exactly the entries of positions_1 
 #			where there is an entry in positions_2 that is one position after a position in positions_1
 # Note of use:
 #	This function is meant to be called iteratively, so that if the PQ is "Space Adventure 2001", we take:
-#								>>> postings_AND_positional(postings_AND_positional(index['Adventure'], index['Space']), index['2001'])
+#								>>> PQ_AND(PQ_AND(index['Adventure'], index['Space'], -1), index['2001'], 2)
 #									  	where len(index['Adventure']) < len(index['Spage']) < len(index['2001'])
-def positions_AND(positions_1, positions_2):
+def positions_AND(positions_1, positions_2, i_difference):
 	intersection = []
 	posIndex_1 = 0
 	posIndex_2 = 0
@@ -60,7 +61,7 @@ def positions_AND(positions_1, positions_2):
 		position_1 = positions_1[posIndex_1]
 		position_2 = positions_2[posIndex_2]
 
-		if (position_1+1) == position_2:
+		if (position_1+i_difference) == position_2:
 			# found a match!
 			intersection.append(position_2) # we append position 2 so that this can be called iteratively starting with the left-most position
 			# increment both indecies
@@ -98,7 +99,7 @@ def postings_AND(postings_1, postings_2, i_difference):
 		pageID_1 = post_1[0]
 		pageID_2 = post_2[0]
 		if pageID_1 == pageID_2: # pageID's match!
-			if not handle_bool: 
+			if not i_difference: 
 				# we're just ANDing over pageIDs so we reached a match
 				intersection.append(post_1) # keep that post since it belongs in intersection
 			else: 
@@ -213,7 +214,7 @@ def handle_BQ(stopwords_set, index, query):
 # 		 query (query) -- from which we obtain list of stream of words (stream_list) [t0, t1, t2, ..., tk]
 # output: prints out the matching documents in order of pageID
 # 			for FTQ matching documents contain subsequence [t1, t2, .., tk] in this order with adjacent terms
-def handle_PQ_optimized(stopwords_set, index, query):
+def handle_PQ(stopwords_set, index, query):
 	# obtain stream of terms from query -- also handles removing operators "" and newline '\n'
 	stream_list = tokenize(stopwords_set, query)
 	# initialize variables in greater scope
@@ -230,20 +231,20 @@ def handle_PQ_optimized(stopwords_set, index, query):
 			# otherwise, store postings in heap, where heap sorts by length of postings.  Also need to store index of work in query for the positional AND
 			postings = index[word]
 			tup = (len(postings), (i, postings)) # stores in heap: (len(postings), (indexInQuery, postings))
-			heapq.heappush(h, tup)
+			heapq.heappush(heap, tup)
 
-	num_tokens = len(h)
+	num_tokens = len(heap)
 	i_1 = 0
 	i_2 = 0
 	if not num_tokens:
 		return ''
 	else:
-		tup = heapq.heappop(h)
+		tup = heapq.heappop(heap)
 		i_1 = tup[1][0]
 		intersection = tup[1][1]
 
 	for j in range(1, num_tokens):
-		tup = heapq.heappop(h)
+		tup = heapq.heappop(heap)
 		i_2 = tup[1][0]
 		postings = tup[1][1]
 		# update intersection by intersecting on current intersection, and newly retrieved postings list.  
@@ -263,36 +264,6 @@ def handle_PQ_optimized(stopwords_set, index, query):
 	return docs
 
 
-# input: set of stopwords (stopwords_set)
-#		 inverted index (index)
-# 		 query (query) -- from which we obtain list of stream of words (stream_list) [t0, t1, t2, ..., tk]
-# output: prints out the matching documents in order of pageID
-# 			for FTQ matching documents contain subsequence [t1, t2, .., tk] in this order with adjacent terms
-def handle_PQ(stopwords_set, index, query):
-	# obtain stream of terms from query -- also handles removing operators "" and newline '\n'
-	stream_list = tokenize(stopwords_set, query)
-	intersection = []
-
-	for i in range(len(stream_list)):
-		token = stream_list[i]
-		if not token in index:
-			# query include word not found in index -- we can't match it 
-			return ''
-		elif not intersection:
-			intersection = index[token]
-		else:
-			intersection = PQ_AND(intersection, index[token])
-			if not intersection:
-				# if that made the intersection now empty, it will stay empty, so exit this loop now
-				return ''
-	
-	docs = ''
-	for j in range(len(intersection)):
-		if j > 0:
-			docs += ' '
-		docs += str(intersection[j][0])
-
-	return docs
 
 # input: set of stopwords (stopwords_set)
 #		 inverted index (index)
