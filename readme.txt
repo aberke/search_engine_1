@@ -23,15 +23,7 @@ queryIndex:
 
 TODO: *********************************************
 
-- finish XMLparser
-
 - replace reconstruct_Index parser with more efficient method for reconstructing index
-
-- finish handle_FTQ
-	- test handle_FTQ
-
-- finish handle_PQ
-	- test handle_PQ
 
 - finish handle_BQ
 	- test handle_BQ
@@ -39,5 +31,4 @@ TODO: *********************************************
 run entirely
 	-- use diff to compare results
 
-make handle_PQ more efficient by ANDing smallest lists first
 
