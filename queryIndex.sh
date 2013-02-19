@@ -6,5 +6,5 @@
 MAIN="queryIndex.py"
 
 # Call $MAIN and pass all the script arguments
-python $MAIN $@
+python2.6 $MAIN $@
 

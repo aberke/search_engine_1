@@ -1,26 +1,11 @@
 # createIndex.py
 # file 1 for project
+import sys
 
-from XMLparser import parse
-from XMLparser import tokenize
+from XMLparser import parse, tokenize, create_stopwords_set
 from porter import stem
 
-# input: filename (fname) of the stopWords file
-# output: set of stopwords
-def create_stopwords_set(fname):
-	f = open(fname, 'r')
-	stopWords_set = set()
 
-	w = f.readline()
-	while w != '': # read to EOF
-		if w[len(w)-1] == '\n':
-			w = w[:len(w)-1] # strip off '\n'
-		# add word to set of stopWords
-		stopWords_set.add(w)		
-
-		w = f.readline()
-	f.close()
-	return stopWords_set
 
 # deals with appending to the titleIndex
 # store the pageID and title as they appear -- but we don't really need to store them in a datastructure since we're not doing anything special with them
@@ -29,15 +14,6 @@ def create_stopwords_set(fname):
 # input: open file to write to, pageID, title as output from parsing the xml file
 def titleIndex_append(f, pageID, titleString):
 	f.write(str(pageID)+' '+titleString+'\n')
-
-
-def fakeParse():
-	d = {}
-	for i in range(10):
-		s = "This is the number "+str(i)
-		s_text = "Even though I said +"+str(i)+", really "+str(i-1)+" is my favorite number"
-		d[i] = (s, s+'\n'+s_text)
-	return d
 
 
 # input: <stopWords file>, <pagesCollection file>, <invertedIndex to be built>, <titleIndex to be built>
@@ -54,8 +30,7 @@ def createIndex(stopwords_filename, pagesCollection_filename, ii_filename, ti_fi
 	index = {}
 
 	# obtain dictionary mapping pageID's to tuple (list of title words, list of title and text words)
-	#collection = parse(pagesCollection)
-	collection = fakeParse()
+	collection = parse(pagesCollection_filename)
 	# iterate over keys (pageID's) to fill the index
 	for pageID in collection:
 		titleString = collection[pageID][0]
@@ -115,7 +90,7 @@ def createIndex(stopwords_filename, pagesCollection_filename, ii_filename, ti_fi
 	invertedIndex_file.close()
 	return index
 				
-		
+#createIndex(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4])	
 		
 
 

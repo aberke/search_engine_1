@@ -4,10 +4,9 @@ import sys
 from math import sqrt# used for calculating skip pointers
 import heapq # using heap to sort documents as find them
 from porter import stem #porter stemmer
-from bool_parser import bool_expr_ast # provided boolean parser for python2.6
+from bool_parser import bool_expr_ast as bool_parse # provided boolean parser for python2.6
 
-from createIndex import create_stopwords_set
-from XMLparser import tokenize
+from XMLparser import tokenize, create_stopwords_set
 
 #word&pageID_0%pos_0 pos_1&pageID_1%pos_0 pos_1 pos2&pageID_2%pos_0
 
@@ -194,37 +193,49 @@ def postings_OR(postings_1, postings_2):
 	return union
 
 
+	
+def handle_BQ_expr(index, expr):
+	# base case
+	if type(expr) == str:
+		if expr in index:
+			return index[expr]
+		else:
+			return []
+	else:
+		operator = expr[0]
+		arguments = expr[1]
+		base_postings = []
 
+		if operator == 'OR':
+			for arg in arguments:
+				base_postings = postings_OR(base_postings, handle_BQ_expr(index,arg))
+			return base_postings
+		else: # operator == 'AND'
+			heap = []
+			for arg in arguments:
+				postings = handle_BQ_expr(index,arg)
+				heapq.heappush(heap, (len(postings), postings))
+
+			base_postings = heapq.heappop(heap)[1]
+			heap_len = len(heap)
+			for j in range(len(heap)):
+				postings = heapq.heappop(heap)[1]
+				base_postings = BQ_AND(base_postings, postings)
+			return base_postings
+			 
 
 def handle_BQ(stopwords_set, index, query):
+	# ('OR', ['Her', ('OR', ['This', 'That']), ('OR', ['This', 'That'])])
 
-	# utilize #occurances here by using it to decide which AND's to compute first
-	# start with smallest set always
-	# eg, for >>> bool_expr_ast('here AND there\n AND again')
-	#			('AND', ['here', 'there', 'again'])
-
-	# use helper functions BQ_AND and postings_OR
-
-    firstSet = []
-
-    #split at parentheses and call handle_BQ recursively for each smaller sub-query
-    if "(" in query and ")" in query:
-        newQuery = re.search('?<=\((.*)?=\)', query) #but this is no good for nested parenteses such as (this AND that AND (bob OR mike)) I think?
-        toRemove = "(" + newQuery + ")"
-        query = query.replace(toRemove, "")
-        #make recursive call
-        firstSet = handle_BQ(stopwords_set, index, newQuery)
-    elif "(" in query:  #remove dangling parens
-        query = query.replace("(", "")
-    elif ")" in query:
-        query = query.replace(")", "")
-    
-    #now that there are no more parentheses to handle, calculate things from left to right
-    stream_list = tokenize(stopwords_set, query)
-
-    return
-
-
+	# for now we assume we get well formed Boolean queries with no stopwords
+	bool_expr = bool_parse(query)
+	postings = handle_BQ_expr(index, bool_expr)
+	docs = ''
+	for k in range(len(postings)):
+		if k > 0:
+			docs += ' '
+		docs += str(postings[k][0])
+	return docs
 
 # input: set of stopwords (stopwords_set)
 #		 inverted index (index)
@@ -325,11 +336,13 @@ def handle_query(stopwords_set, index, query):
 
 # main function
 def queryIndex(stopwords_filename, ii_filename, ti_filename):
-	
+	print('hi')
 	index = reconstruct_Index(ii_filename)
 	stopwords_set = create_stopwords_set(stopwords_filename)
+	count = 0
 	
 	while 1: # read queries from standard input until user enters CTRL+D
+		print(count)
 		try:
 			query = sys.stdin.readline()
 		except KeyboardInterrupt:
@@ -338,7 +351,8 @@ def queryIndex(stopwords_filename, ii_filename, ti_filename):
 			break
 		documents = handle_query(stopwords_set, index, query)
 		print(documents)
+		count += 1
 	return	
 
-
+queryIndex(sys.argv[1], sys.argv[2], sys.argv[3])
 

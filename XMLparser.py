@@ -3,7 +3,23 @@
 import re
 from porter import stem as stemToken
 
+# input: filename (fname) of the stopWords file
+# output: set of stopwords
+def create_stopwords_set(fname):
+    f = open(fname, 'r')
+    stopWords_set = set()
 
+    w = f.readline()
+    while w != '': # read to EOF
+        if w[len(w)-1] == '\n':
+            w = w[:len(w)-1] # strip off '\n'
+        # add word to set of stopWords
+        stopWords_set.add(w)        
+
+        w = f.readline()
+    f.close()
+    return stopWords_set 
+    
 # input: string to turn into list of tokens
 # output: list of tokens
 def tokenize(stopWords_set, textString):
@@ -32,20 +48,20 @@ def parse(fname):
     pageID = ""
     dictionary = {} #dictionary initially empty
 
-
     # loop through entire document by line
     currLine = f.readline()
     while currLine:
-
         wordsList = []
 
-        while (not "<id>" in currLine): currLine = f.readline()
+        while (not "<id>" in currLine and currLine): currLine = f.readline()
         # currLine now contains the pageID, so parse that as needed
         currLine = currLine.replace("<id>", "")
-        currLine = currLine.replace("</id>", "")
-        pageID = currLine
+        currLine = currLine.replace("</id>\n", "")
+        if not currLine:
+            break
+        pageID = int(currLine)
 
-        while (not "<title>" in currLine): currLine = f.readline()
+        while (not "<title>" in currLine and currLine): currLine = f.readline()
         # currLine now contains the title, so parse that as needed
 
         titleString = currLine[7:len(currLine)-9]+'\n'
@@ -53,10 +69,10 @@ def parse(fname):
         #Do we need to remove the \n we added to the titleString??
         textString = titleString 
 
-        while (not "<text>" in currLine): currLine = f.readline()
+        while (not "<text>" in currLine and currLine): currLine = f.readline()
         # now we've reached the <text> section, so iterate through lines until reaching the end at </text>
         currLine = currLine.replace("<text>", "")
-        while (not "</text>" in currLine):
+        while (not "</text>" in currLine and currLine):
             textString == textString + currLine
             currLine = f.readline()
 
