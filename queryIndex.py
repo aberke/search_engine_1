@@ -76,12 +76,13 @@ def positions_AND(positions_1, positions_2):
 	return intersection
 
 # helper to both handle_BQ and handle_PQ -- handles the AND
-# takes two postings lists and boolean where true means using for handle_BQ and false means using for handle_PQ:
+# takes two postings lists and 3rd parameter which for the purpose of this function can be interpreted as a boolean stating whether this is for handle_PQ or handle_BQ:
+#			False (handle_BQ): is passed as 0 and means this is for the BQ_AND and there should be no further call to positional_AND
+#			True (handle_PQ): means any other value, which is passed in as the difference of the indecies of query1 and query2, for the sake of the positional_AND.
+#				--> If true, function uses helper procedure positional_AND 
 #		if true: returns the intersection over the pageID's
 #		if false: returns the intersection over the pageID's and positions (where position_2 directly after position_1)
-
-# TODO: DEAL WITH UPDATING SKIP POINTERS IN INTERSECTION
-def postings_AND(postings_1, postings_2, handle_bool):
+def postings_AND(postings_1, postings_2, i_difference):
 	intersection = []  # Even if just matching PageID's, I want this to still be a full postings list rather than just pageIDs so that we can iterate on this function with ease
 	pageIndex_1 = 0
 	pageIndex_2 = 0
@@ -97,14 +98,14 @@ def postings_AND(postings_1, postings_2, handle_bool):
 		pageID_1 = post_1[0]
 		pageID_2 = post_2[0]
 		if pageID_1 == pageID_2: # pageID's match!
-			if handle_bool: 
+			if not handle_bool: 
 				# we're just ANDing over pageIDs so we reached a match
 				intersection.append(post_1) # keep that post since it belongs in intersection
 			else: 
 				# we're also matching positions, so keep checking for match in positions
 				positions_1 = post_1[1]
 				positions_2 = post_2[1]
-				position_intersection = positions_AND(positions_1, positions_2) # take intersection of positions lists
+				position_intersection = positions_AND(positions_1, positions_2, i_difference) # take intersection of positions lists
 				# only append to intersection if positions_intersection is a nonempty list
 				if position_intersection:
 					intersection.append([pageID_1, position_intersection])
@@ -132,16 +133,17 @@ def postings_AND(postings_1, postings_2, handle_bool):
 
 # helper to handle_PQ -- handles the AND
 # takes two postings lists and returns the intersection over the pageID's and positions 
-#	(each entry (pageID, position) in postings_1 that appears in intersection, has a corresponding entry (pageID, position+1) that appears in postings_2)
+# takes as 3rd parameter: difference in indecies of words in query that correspond to the postings.  This is for the purpose of the positional ANDing
+#	(each entry (pageID, position) in postings_1 that appears in intersection, has a corresponding entry (pageID, position+i_difference) that appears in postings_2)
 # uses helper function postings_AND which then also uses positions_AND
-def PQ_AND(postings_1, postings_2):
-	return postings_AND(postings_1, postings_2, False)
+def PQ_AND(postings_1, postings_2, i_difference):
+	return postings_AND(postings_1, postings_2, i_difference)
 
 # helper to handle_BQ -- handles the AND
 # takes two postings lists and returns the intersection over the pageID's
 # uses helper function postings_AND
 def BQ_AND(postings_1, postings_2):
-	return postings_AND(postings_1, postings_2, true)
+	return postings_AND(postings_1, postings_2, 0)
 
 
 def postings_OR(postings_1, postings_2):
@@ -206,6 +208,59 @@ def handle_BQ(stopwords_set, index, query):
 
 
 
+# input: set of stopwords (stopwords_set)
+#		 inverted index (index)
+# 		 query (query) -- from which we obtain list of stream of words (stream_list) [t0, t1, t2, ..., tk]
+# output: prints out the matching documents in order of pageID
+# 			for FTQ matching documents contain subsequence [t1, t2, .., tk] in this order with adjacent terms
+def handle_PQ_optimized(stopwords_set, index, query):
+	# obtain stream of terms from query -- also handles removing operators "" and newline '\n'
+	stream_list = tokenize(stopwords_set, query)
+	# initialize variables in greater scope
+	intersection = []
+	tup = None
+
+	heap = [] # I use a heap to first sort out which postings lists are smallest -- so that my ANDing can be efficient
+	for i in range(len(stream_list)):
+		word = stream_list[i]
+		if not word in index: 
+			# word isn't in index, so we can satisfy positional query -- return no documents
+			return ''
+		else:
+			# otherwise, store postings in heap, where heap sorts by length of postings.  Also need to store index of work in query for the positional AND
+			postings = index[word]
+			tup = (len(postings), (i, postings)) # stores in heap: (len(postings), (indexInQuery, postings))
+			heapq.heappush(h, tup)
+
+	num_tokens = len(h)
+	i_1 = 0
+	i_2 = 0
+	if not num_tokens:
+		return ''
+	else:
+		tup = heapq.heappop(h)
+		i_1 = tup[1][0]
+		intersection = tup[1][1]
+
+	for j in range(1, num_tokens):
+		tup = heapq.heappop(h)
+		i_2 = tup[1][0]
+		postings = tup[1][1]
+		# update intersection by intersecting on current intersection, and newly retrieved postings list.  
+		intersection = PQ_AND(intersection, postings, i_2-i_1) # We send in the difference of the indecies of the words in query for the positional AND
+		if not intersection:
+			# if nothing is left in intersection, can break out of loop now with nothing to return
+			return ''
+		else:
+			i_1 = i_2 # otherwise update our indecies for the purpose of the parameters for positional AND
+
+	docs = ''
+	for k in range(len(intersection)):
+		if k > 0:
+			docs += ' '
+		docs += str(intersection[k][0])
+
+	return docs
 
 
 # input: set of stopwords (stopwords_set)
