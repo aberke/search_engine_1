@@ -7,6 +7,7 @@ from porter import stem #porter stemmer
 from bool_parser import bool_expr_ast # provided boolean parser for python2.6
 
 from createIndex import create_stopwords_set
+from XMLparser import tokenize
 
 #word&pageID_0%pos_0 pos_1&pageID_1%pos_0 pos_1 pos2&pageID_2%pos_0
 
@@ -134,7 +135,7 @@ def postings_AND(postings_1, postings_2, handle_bool):
 #	(each entry (pageID, position) in postings_1 that appears in intersection, has a corresponding entry (pageID, position+1) that appears in postings_2)
 # uses helper function postings_AND which then also uses positions_AND
 def PQ_AND(postings_1, postings_2):
-	return postings_AND(postings_1, postings_2, false)
+	return postings_AND(postings_1, postings_2, False)
 
 # helper to handle_BQ -- handles the AND
 # takes two postings lists and returns the intersection over the pageID's
@@ -215,32 +216,28 @@ def handle_BQ(stopwords_set, index, query):
 def handle_PQ(stopwords_set, index, query):
 	# obtain stream of terms from query -- also handles removing operators "" and newline '\n'
 	stream_list = tokenize(stopwords_set, query)
-	if not len(stream_list):
-		# there were no tokens in the stream
-		return ''
+	intersection = []
 
-	documents = [] #initialize empty list of pageIDs
+	for i in range(len(stream_list)):
+		token = stream_list[i]
+		if not token in index:
+			# query include word not found in index -- we can't match it 
+			return ''
+		elif not intersection:
+			intersection = index[token]
+		else:
+			intersection = PQ_AND(intersection, index[token])
+			if not intersection:
+				# if that made the intersection now empty, it will stay empty, so exit this loop now
+				return ''
+	
+	docs = ''
+	for j in range(len(intersection)):
+		if j > 0:
+			docs += ' '
+		docs += str(intersection[j][0])
 
-	intersection = index[stream_list[0]]
-
-	for token in stream_list:
-		pass
-
-
-	documents_set = set() # set allow to quickly check if document already in heap
-	documents_heap = [] # heap allows us to sort document ID's as we go	
-
-	# obtain all postings corresponding to first word t0
-	t_0 = stream_list[0]
-	potential_postings = index[t_0]
-	for i in range(1, len(stream_list)):
-		p_i = []
-		t_i = stream_list[i]
-
-
-		#for post in potential_postings:
-
-	return
+	return docs
 
 # input: set of stopwords (stopwords_set)
 #		 inverted index (index)
@@ -249,7 +246,7 @@ def handle_PQ(stopwords_set, index, query):
 # 			for FTQ matching documents contain at least one word whose stemmed version is one of the ti's
 def handle_FTQ(stopwords_set, index, query):
 	# turn query into stream of tokens
-	stream_list = query_to_stream(stopwords_set, query)
+	stream_list = tokenize(stopwords_set, query)
 	stream_length = len(stream_list)
 	if not stream_length: # make sure we got some tokens out of that query
 		return ''
