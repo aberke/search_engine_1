@@ -205,7 +205,24 @@ def handle_BQ(stopwords_set, index, query):
 
 	# use helper functions BQ_AND and postings_OR
 
-	return
+    firstSet = []
+
+    #split at parentheses and call handle_BQ recursively for each smaller sub-query
+    if "(" in query and ")" in query:
+        newQuery = re.search('?<=\((.*)?=\)', query) #but this is no good for nested parenteses such as (this AND that AND (bob OR mike)) I think?
+        toRemove = "(" + newQuery + ")"
+        query = query.replace(toRemove, "")
+        #make recursive call
+        firstSet = handle_BQ(stopwords_set, index, newQuery)
+    elif "(" in query:  #remove dangling parens
+        query = query.replace("(", "")
+    elif ")" in query:
+        query = query.replace(")", "")
+    
+    #now that there are no more parentheses to handle, calculate things from left to right
+    stream_list = tokenize(stopwords_set, query)
+
+    return
 
 
 
