@@ -1,5 +1,7 @@
 # XML parser used in createIndex
 
+import heapq # using heap to push docIDs as find them in parse
+
 import re
 from porter import stem as stemToken
 
@@ -40,13 +42,12 @@ def tokenize(stopWords_set, textString):
 
 
 #input: filename (fname) of the file collection
-#output: dictionary mapping pageID to tuple 
-# pageID: (titleString, textString)
+#output: heap with key: pageID, value: tuple (titleString, textString)
 
 def parse(fname):
     f = open(fname)
     pageID = ""
-    dictionary = {} #dictionary initially empty
+    heap = [] # heap initially empty
 
     # loop through entire document by line
     currLine = f.readline()
@@ -81,7 +82,7 @@ def parse(fname):
         textString = textString + currLine
 
         titleTextTuple = titleString, textString
-        dictionary.update({pageID:titleTextTuple})  #add entry for this page into dictionary
+        heapq.heappush(heap, (pageID,(titleString,textString))) #add entry for this page into heap
         currLine = f.readline()
 
-    return dictionary
+    return heap

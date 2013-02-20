@@ -1,6 +1,7 @@
 # createIndex.py
 # file 1 for project
 import sys
+import heapq # using heap to push docIDs as find them in parse
 
 from XMLparser import parse, tokenize, create_stopwords_set
 from porter import stem
@@ -25,16 +26,18 @@ def createIndex(stopwords_filename, pagesCollection_filename, ii_filename, ti_fi
 
 	# obtain the stopwords in a set for quick checking
 	stopWords_set = create_stopwords_set(stopwords_filename)
-	
 	# initialize empty index
 	index = {}
 
-	# obtain dictionary mapping pageID's to tuple (list of title words, list of title and text words)
+	# obtain heap mapping pageID's to tuple (list of title words, list of title and text words)
 	collection = parse(pagesCollection_filename)
+	N = len(collection)
 	# iterate over keys (pageID's) to fill the index
-	for pageID in collection:
-		titleString = collection[pageID][0]
-		textString = collection[pageID][1]
+	for i in range(N):
+		item = heapq.heappop(collection)
+		pageID = item[0]
+		titleString = item[1][0]
+		textString = item[1][1]
 		
 		# add to titleIndex:
 		titleIndex_append(titleIndex_file, pageID, titleString)
@@ -64,13 +67,11 @@ def createIndex(stopwords_filename, pagesCollection_filename, ii_filename, ti_fi
 
 			# now just adjust position
 			position += 1
-
 	# now the index is built
 	titleIndex_file.close() # done writing to titleIndex
 
 	# write out index in format:  word&pageID_0%pos_0 pos_1&pageID_1%pos_0 pos_1 pos2&pageID_2 pos_0
-
-	# print one line for each word in index 
+	#print one line for each word in index 
 	for word in index:
 		w_postings = index[word]
 		invertedIndex_file.write(word) # so far have: "word"
@@ -90,7 +91,7 @@ def createIndex(stopwords_filename, pagesCollection_filename, ii_filename, ti_fi
 	invertedIndex_file.close()
 	return index
 				
-#createIndex(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4])	
+createIndex(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4])	
 		
 
 

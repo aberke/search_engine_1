@@ -328,7 +328,7 @@ def handle_query(stopwords_set, index, query):
 		# handle BQ in its own way
 		return handle_BQ(stopwords_set, index, query)
 
-	if query[0]=='"' and query[len(s1)-1]=='"': # it's a PQ
+	if query[0]=='"' and query[len(query)-1]=='"': # it's a PQ
 		return handle_PQ(stopwords_set, index, query)
 		
 	else: # it's a OWQ or FTQ
@@ -336,13 +336,13 @@ def handle_query(stopwords_set, index, query):
 
 # main function
 def queryIndex(stopwords_filename, ii_filename, ti_filename):
-	print('hi')
 	index = reconstruct_Index(ii_filename)
 	stopwords_set = create_stopwords_set(stopwords_filename)
+	print('...ready')
 	count = 0
 	
 	while 1: # read queries from standard input until user enters CTRL+D
-		print(count)
+		#print(count)
 		try:
 			query = sys.stdin.readline()
 		except KeyboardInterrupt:
