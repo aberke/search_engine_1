@@ -7,8 +7,7 @@ def ourDiff(fname1, fname2):
     count = 0
     line1 = f1.readline()
     line2 = f2.readline()
-    #while line1 or line2:
-    while count < 80:
+    while line1 or line2:
         line1 = line1.split()
         line2 = line2.split()
         count += 1

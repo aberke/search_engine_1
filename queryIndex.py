@@ -38,7 +38,6 @@ def reconstruct_Index(ii_filename):
 		line = ii_file.readline()
 
 	ii_file.close()
-	print('finished creating index')
 	return index
 
 # helper functions to 
@@ -68,10 +67,10 @@ def positions_AND(positions_1, positions_2, i_difference):
 			posIndex_1 += 1
 			posIndex_2 += 1
 
-		elif (position_1+1) < position_2:
+		elif (position_1+i_difference) < position_2:
 			posIndex_1 += 1
 
-		else: # (position_1+1 > position_2)
+		else: # (position_1+i_difference > position_2)
 			posIndex_2 += 1
 
 	return intersection

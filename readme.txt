@@ -1,10 +1,12 @@
-TEAM_NAME: Alex 
+TEAM_NAME: Alex and Spencer
 
 FULL_NAME: Alexandra Berke (SUBMITTER)
 CS_LOGIN: aberke
 EMAIL_ADDRESS: alexandra_berke@brown.edu
 
-My team-mate bailed out on me, so I did this project alone.
+FULL_NAME: Matt (TEAM-MATE)
+CS_LOGIN: 
+EMAIL_ADDRESS: 
 
 
 ***** Questions for TA's: *********
@@ -22,4 +24,11 @@ queryIndex:
 TODO: *********************************************
 
 - replace reconstruct_Index parser with more efficient method for reconstructing index
+
+- finish handle_BQ
+	- test handle_BQ
+
+run entirely
+	-- use diff to compare results
+
 
