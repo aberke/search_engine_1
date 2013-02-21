@@ -93,7 +93,7 @@ def createIndex(stopwords_filename, pagesCollection_filename, ii_filename, ti_fi
 	invertedIndex_file.close()
 	return index
 				
-#createIndex(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4])	
+createIndex(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4])	
 		
 
 

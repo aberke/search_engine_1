@@ -2,7 +2,7 @@
 import sys
 # need sqrt and floor so that skips can occur every floor(sqrt(L)) pageID's where L = #pageID's
 from math import sqrt# used for calculating skip pointers
-import heapq # using heap to sort documents as find them
+import heapq # using heap to sort postings lists by length so we can begin ANDing with smallest list
 from porter_martin import PorterStemmer # instantiate stemmer to pass into tokenize
 from bool_parser import bool_expr_ast as bool_parse # provided boolean parser for python2.6
 
@@ -33,11 +33,12 @@ def reconstruct_Index(ii_filename):
 			positions = [int(pos) for pos in p[1].split()]
 			posting = [int(p[0]), positions] # posting = [pageID, positions] 
 			postings.append(posting)
-		
+
 		index[word] = postings
 		line = ii_file.readline()
 
 	ii_file.close()
+	print('finished creating index')
 	return index
 
 # helper functions to 
@@ -192,8 +193,11 @@ def postings_OR(postings_1, postings_2):
 
 	return union
 
-
-	
+# input: set of stopwords (stopwords_set)
+#		 inverted index (index)
+#		 porter stemmer (stemmer)
+# 		 boolean expression (expr) -- that this function is called recursively on
+# output: postings-list that satisfies boolean expression (expr)
 def handle_BQ_expr(stopwords_set, index, stemmer, expr):
 	# base case
 	if type(expr) == str:
@@ -203,8 +207,8 @@ def handle_BQ_expr(stopwords_set, index, stemmer, expr):
 		else:
 			return []
 	else:
-		operator = expr[0]
-		arguments = expr[1]
+		operator = expr[0] # AND or OR
+		arguments = expr[1] # list of boolean expressions (base case is that they're just words)
 		base_postings = []
 
 		if operator == 'OR':
@@ -212,7 +216,7 @@ def handle_BQ_expr(stopwords_set, index, stemmer, expr):
 				base_postings = postings_OR(base_postings, handle_BQ_expr(stopwords_set, index, stemmer, arg))
 			return base_postings
 		else: # operator == 'AND'
-			heap = []
+			heap = [] # want to first sort arguments postings by length so we can being ANDing with smallest list
 			for arg in arguments:
 				postings = handle_BQ_expr(stopwords_set, index, stemmer, arg)
 				heapq.heappush(heap, (len(postings), postings))
@@ -224,7 +228,10 @@ def handle_BQ_expr(stopwords_set, index, stemmer, expr):
 				base_postings = BQ_AND(base_postings, postings)
 			return base_postings
 			 
-
+# input: set of stopwords (stopwords_set)
+#		 inverted index (index)
+#		 porter stemmer (stemmer)
+# 		 query (query) -- from which we obtain list of stream of words (stream_list) [t0, t1, t2, ..., tk]
 def handle_BQ(stopwords_set, index, stemmer, query):
 	# ('OR', ['Her', ('OR', ['This', 'That']), ('OR', ['This', 'That'])])
 
@@ -240,9 +247,10 @@ def handle_BQ(stopwords_set, index, stemmer, query):
 
 # input: set of stopwords (stopwords_set)
 #		 inverted index (index)
+#		 porter stemmer (stemmer)
 # 		 query (query) -- from which we obtain list of stream of words (stream_list) [t0, t1, t2, ..., tk]
 # output: prints out the matching documents in order of pageID
-# 			for FTQ matching documents contain subsequence [t1, t2, .., tk] in this order with adjacent terms
+# 			for PQ matching documents contain subsequence [t1, t2, .., tk] in this order with adjacent terms
 def handle_PQ(stopwords_set, index, stemmer, query):
 	# obtain stream of terms from query -- also handles removing operators "" and newline '\n'
 	stream_list = tokenize(stopwords_set, stemmer, query)
@@ -296,6 +304,7 @@ def handle_PQ(stopwords_set, index, stemmer, query):
 
 # input: set of stopwords (stopwords_set)
 #		 inverted index (index)
+#		 porter stemmer (stemmer)
 # 		 query (query) -- from which we obtain list of stream of words (stream_list) [t0, t1, t2, ..., tk]
 # output: prints out the matching documents in order of pageID
 # 			for FTQ matching documents contain at least one word whose stemmed version is one of the ti's
@@ -321,7 +330,10 @@ def handle_FTQ(stopwords_set, index, stemmer, query):
 		documents += str(pageID)	
 	return documents
 
-
+# input: set of stopwords (stopwords_set)
+#		 inverted index (index)
+#		 porter stemmer (stemmer)
+# 		 query (query) -- from which we obtain list of stream of words (stream_list) [t0, t1, t2, ..., tk]
 # helper routine to queryIndex -- determines type of query and passes off to further handling
 def handle_query(stopwords_set, index, stemmer, query):
 	# determine query type (OWQ, FTQ, PQ, BQ)
