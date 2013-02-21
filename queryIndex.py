@@ -352,7 +352,7 @@ def queryIndex(stopwords_filename, ii_filename, ti_filename):
 	stopwords_set = create_stopwords_set(stopwords_filename)
 	# instantiate stemmer to pass into tokenize
 	stemmer = PorterStemmer()
-	
+	print("..ready")
 	while 1: # read queries from standard input until user enters CTRL+D
 		#print(count)
 		try:
