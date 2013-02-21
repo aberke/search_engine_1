@@ -1,12 +1,12 @@
-TEAM_NAME: Alex and Spencer
+TEAM_NAME: Alex and Matt
 
 FULL_NAME: Alexandra Berke (SUBMITTER)
 CS_LOGIN: aberke
 EMAIL_ADDRESS: alexandra_berke@brown.edu
 
-FULL_NAME: Matt (TEAM-MATE)
-CS_LOGIN: 
-EMAIL_ADDRESS: 
+FULL_NAME: Matt Patenaude (TEAM-MATE)
+CS_LOGIN: mpatenau
+EMAIL_ADDRESS: matthew_patenaude@brown.edu
 
 
 ***** Questions for TA's: *********
