@@ -3,7 +3,7 @@ import sys
 # need sqrt and floor so that skips can occur every floor(sqrt(L)) pageID's where L = #pageID's
 from math import sqrt# used for calculating skip pointers
 import heapq # using heap to sort documents as find them
-from porter import stem #porter stemmer
+from porter_martin import PorterStemmer # instantiate stemmer to pass into tokenize
 from bool_parser import bool_expr_ast as bool_parse # provided boolean parser for python2.6
 
 from XMLparser import tokenize, create_stopwords_set
@@ -194,11 +194,12 @@ def postings_OR(postings_1, postings_2):
 
 
 	
-def handle_BQ_expr(index, expr):
+def handle_BQ_expr(stopwords_set, index, stemmer, expr):
 	# base case
 	if type(expr) == str:
-		if expr in index:
-			return index[expr]
+		token = tokenize(stopwords_set, stemmer, expr)[0]
+		if token in index:
+			return index[token]
 		else:
 			return []
 	else:
@@ -208,12 +209,12 @@ def handle_BQ_expr(index, expr):
 
 		if operator == 'OR':
 			for arg in arguments:
-				base_postings = postings_OR(base_postings, handle_BQ_expr(index,arg))
+				base_postings = postings_OR(base_postings, handle_BQ_expr(stopwords_set, index, stemmer, arg))
 			return base_postings
 		else: # operator == 'AND'
 			heap = []
 			for arg in arguments:
-				postings = handle_BQ_expr(index,arg)
+				postings = handle_BQ_expr(stopwords_set, index, stemmer, arg)
 				heapq.heappush(heap, (len(postings), postings))
 
 			base_postings = heapq.heappop(heap)[1]
@@ -224,12 +225,12 @@ def handle_BQ_expr(index, expr):
 			return base_postings
 			 
 
-def handle_BQ(stopwords_set, index, query):
+def handle_BQ(stopwords_set, index, stemmer, query):
 	# ('OR', ['Her', ('OR', ['This', 'That']), ('OR', ['This', 'That'])])
 
 	# for now we assume we get well formed Boolean queries with no stopwords
 	bool_expr = bool_parse(query)
-	postings = handle_BQ_expr(index, bool_expr)
+	postings = handle_BQ_expr(stopwords_set, index, stemmer, bool_expr)
 	docs = ''
 	for k in range(len(postings)):
 		if k > 0:
@@ -242,9 +243,9 @@ def handle_BQ(stopwords_set, index, query):
 # 		 query (query) -- from which we obtain list of stream of words (stream_list) [t0, t1, t2, ..., tk]
 # output: prints out the matching documents in order of pageID
 # 			for FTQ matching documents contain subsequence [t1, t2, .., tk] in this order with adjacent terms
-def handle_PQ(stopwords_set, index, query):
+def handle_PQ(stopwords_set, index, stemmer, query):
 	# obtain stream of terms from query -- also handles removing operators "" and newline '\n'
-	stream_list = tokenize(stopwords_set, query)
+	stream_list = tokenize(stopwords_set, stemmer, query)
 	# initialize variables in greater scope
 	intersection = []
 	tup = None
@@ -298,9 +299,9 @@ def handle_PQ(stopwords_set, index, query):
 # 		 query (query) -- from which we obtain list of stream of words (stream_list) [t0, t1, t2, ..., tk]
 # output: prints out the matching documents in order of pageID
 # 			for FTQ matching documents contain at least one word whose stemmed version is one of the ti's
-def handle_FTQ(stopwords_set, index, query):
+def handle_FTQ(stopwords_set, index, stemmer, query):
 	# turn query into stream of tokens
-	stream_list = tokenize(stopwords_set, query)
+	stream_list = tokenize(stopwords_set, stemmer, query)
 	stream_length = len(stream_list)
 	if not stream_length: # make sure we got some tokens out of that query
 		return ''
@@ -322,24 +323,24 @@ def handle_FTQ(stopwords_set, index, query):
 
 
 # helper routine to queryIndex -- determines type of query and passes off to further handling
-def handle_query(stopwords_set, index, query):
+def handle_query(stopwords_set, index, stemmer, query):
 	# determine query type (OWQ, FTQ, PQ, BQ)
 	if ('AND' in query or 'OR' in query or ')' in query or '(' in query):  # note that the boolean parser strips off trailing '\n'
 		# handle BQ in its own way
-		return handle_BQ(stopwords_set, index, query)
-
-	if query[0]=='"' and query[len(query)-1]=='"': # it's a PQ
-		return handle_PQ(stopwords_set, index, query)
+		return handle_BQ(stopwords_set, index, stemmer, query)
+	
+	if (query[0]=='"' and query[len(query)-2]=='"' and query[len(query)-1]=='\n') or (query[0]=='"' and query[len(query)-1]=='"'): # it's a PQ
+		return handle_PQ(stopwords_set, index, stemmer, query)
 		
 	else: # it's a OWQ or FTQ
-		return handle_FTQ(stopwords_set, index, query)
+		return handle_FTQ(stopwords_set, index, stemmer, query)
 
 # main function
 def queryIndex(stopwords_filename, ii_filename, ti_filename):
 	index = reconstruct_Index(ii_filename)
 	stopwords_set = create_stopwords_set(stopwords_filename)
-	print('...ready')
-	count = 0
+	# instantiate stemmer to pass into tokenize
+	stemmer = PorterStemmer()
 	
 	while 1: # read queries from standard input until user enters CTRL+D
 		#print(count)
@@ -349,9 +350,8 @@ def queryIndex(stopwords_filename, ii_filename, ti_filename):
 			break
 		if not query:
 			break
-		documents = handle_query(stopwords_set, index, query)
+		documents = handle_query(stopwords_set, index, stemmer, query)
 		print(documents)
-		count += 1
 	return	
 
 queryIndex(sys.argv[1], sys.argv[2], sys.argv[3])

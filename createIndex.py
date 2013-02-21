@@ -2,9 +2,9 @@
 # file 1 for project
 import sys
 import heapq # using heap to push docIDs as find them in parse
+from porter_martin import PorterStemmer # instantiate stemmer to pass into tokenize
 
 from XMLparser import parse, tokenize, create_stopwords_set
-from porter import stem
 
 
 
@@ -23,6 +23,8 @@ def createIndex(stopwords_filename, pagesCollection_filename, ii_filename, ti_fi
 	# open up the files for writing
 	invertedIndex_file = open(ii_filename, 'w')
 	titleIndex_file = open(ti_filename, 'w')
+	# instantiate stemmer to pass into tokenize
+	stemmer = PorterStemmer()
 
 	# obtain the stopwords in a set for quick checking
 	stopWords_set = create_stopwords_set(stopwords_filename)
@@ -43,7 +45,7 @@ def createIndex(stopwords_filename, pagesCollection_filename, ii_filename, ti_fi
 		titleIndex_append(titleIndex_file, pageID, titleString)
 
 		# tokenize titleString
-		token_list = tokenize(stopWords_set, textString)
+		token_list = tokenize(stopWords_set, stemmer, textString)
 
 		# add to index:
 		position = 0
@@ -91,7 +93,7 @@ def createIndex(stopwords_filename, pagesCollection_filename, ii_filename, ti_fi
 	invertedIndex_file.close()
 	return index
 				
-createIndex(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4])	
+#createIndex(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4])	
 		
 
 

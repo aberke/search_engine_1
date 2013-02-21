@@ -3,7 +3,8 @@
 import heapq # using heap to push docIDs as find them in parse
 
 import re
-from porter import stem as stemToken
+from porter_martin import PorterStemmer
+
 
 # input: filename (fname) of the stopWords file
 # output: set of stopwords
@@ -22,21 +23,30 @@ def create_stopwords_set(fname):
     f.close()
     return stopWords_set 
 
+def replace(textString):
+    t = ''
+    for ch in textString:
+        if ch.isalnum():
+            t = t+ch
+        else:
+            t = t+' '
+    return t
+
 # input: string to turn into list of tokens
 # output: list of tokens
-def tokenize(stopWords_set, textString):
+def tokenize(stopWords_set, stemmer, textString):
     token_list = []
    
     # 1) lowercase all the words in the stream, 
     textString = textString.lower()
     # 2) obtain the tokens (strings of alphanumeric characters [a-z0-9], terminated by a non alphanumeric character) 
-    textString = re.sub('[^0-9a-zA-Z]+', ' ', textString)
+    textString = replace(textString)
     # split textString into list of words   
     text_list = textString.split()
     # 3) filter out all the tokens matching element of stopwords list
     for word in text_list:
         if not word in stopWords_set:
-            word = stemToken(word)
+            word = stemmer.stem(word,0,len(word)-1)
             token_list.append(word)
     return token_list
 
