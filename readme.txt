@@ -23,6 +23,8 @@ queryIndex:
 
 TODO: *********************************************
 
+- should parse return a heap or a dictionary?
+
 - replace reconstruct_Index parser with more efficient method for reconstructing index
 
 - finish handle_BQ
