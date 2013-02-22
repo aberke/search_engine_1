@@ -57,12 +57,12 @@ def tokenize(stopWords_set, stemmer, textString):
 def parse(fname):
     f = open(fname)
     pageID = ""
-    heap = [] # heap initially empty
+    dictionary = {} # heap initially empty
+    maxID = 0
 
     # loop through entire document by line
     currLine = f.readline()
     while currLine:
-        wordsList = []
 
         while (not "<id>" in currLine and currLine): currLine = f.readline()
         # currLine now contains the pageID, so parse that as needed
@@ -92,7 +92,10 @@ def parse(fname):
         textString = textString + currLine
 
         titleTextTuple = titleString, textString
-        heapq.heappush(heap, (pageID,(titleString,textString))) #add entry for this page into heap
+        dictionary[pageID] = (titleString, textString)
+        if pageID > maxID:
+            maxID = pageID
+        #heapq.heappush(heap, (pageID,(titleString,textString))) #add entry for this page into heap
         currLine = f.readline()
 
-    return heap
+    return (dictionary, maxID)

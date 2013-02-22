@@ -32,14 +32,19 @@ def createIndex(stopwords_filename, pagesCollection_filename, ii_filename, ti_fi
 	index = {}
 
 	# obtain heap mapping pageID's to tuple (list of title words, list of title and text words)
-	collection = parse(pagesCollection_filename)
-	N = len(collection)
+	(collection, N) = parse(pagesCollection_filename)
+	#N = len(collection)
 	# iterate over keys (pageID's) to fill the index
-	for i in range(N):
-		item = heapq.heappop(collection)
-		pageID = item[0]
-		titleString = item[1][0]
-		textString = item[1][1]
+	for i in range(N+1):
+
+		if not i in collection:
+			continue
+		#item = heapq.heappop(collection)
+		item = collection[i]
+		#pageID = item[0]
+		pageID = i
+		titleString = item[0]
+		textString = item[1]
 		
 		# add to titleIndex:
 		titleIndex_append(titleIndex_file, pageID, titleString)
@@ -82,10 +87,12 @@ def createIndex(stopwords_filename, pagesCollection_filename, ii_filename, ti_fi
 			post = w_postings[i]
 			page_ID = post[0]
 			positions = post[1]
+			toWrite = "&%s%%%s" % (str(page_ID), " ".join(positions))
+			toWrite += "&"+str(page_ID)
 
-			invertedIndex_file.write("&"+str(page_ID))  # so far have: "word&page_ID"
+			#invertedIndex_file.write("&"+str(page_ID))  # so far have: "word&page_ID"
 			# write out positions list
-			invertedIndex_file.write("%"+str(positions[0]))
+			#invertedIndex_file.write("%"+str(positions[0]))
 			for p in range(1, len(positions)):
 				invertedIndex_file.write(" "+str(positions[p])) # so far have: "word&page_ID%pos_0 pos_1 pos_2, ..."
 
