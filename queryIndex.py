@@ -395,7 +395,6 @@ def handle_query(stopwords_set, index, stemmer, query):
 # main function
 def queryIndex(stopwords_filename, ii_filename, ti_filename):
 	index = reconstruct_Index(ii_filename)
-	return
 	stopwords_set = create_stopwords_set(stopwords_filename)
 	# instantiate stemmer to pass into tokenize
 	stemmer = PorterStemmer()
