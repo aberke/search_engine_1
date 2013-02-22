@@ -17,25 +17,71 @@ def reconstruct_Index(ii_filename):
 	# reconstruct invertedIndex from file starting with empty dictionary
 	index = {} 
 	ii_file = open(ii_filename)
-
-	line = ii_file.readline()
-	while line != '': # read to EOF
-		# TODO: REPLACE THIS WITH MORE EFFICIENT PARSER
-		l = line.split('&') # split along the postings delimeter   [word, [post0],[post1],...]
+	
+	# setup states for the parser
+	STATE_WORD = 1
+	STATE_PAGEID = 2
+	STATE_POSLIST = 3
+	
+	# use a simple FSM to parse the index quickly
+	for line in ii_file:
+		word = ""
+		pageID = ""
+		position = ""
+		positions = []
 		
-		# extract word 
-		word = l[0]
-
-		# build postings list from empty list
 		postings = []
-		for i in range(1, len(l)):
-			p = l[i].split('%')
-			positions = [int(pos) for pos in p[1].split()]
-			posting = [int(p[0]), positions] # posting = [pageID, positions] 
-			postings.append(posting)
-
+		state = STATE_WORD
+		
+		for c in line:
+			if state == STATE_WORD:
+				if c == "&":
+					state = STATE_PAGEID
+				elif c == "\n":
+					break
+				else:
+					word += c
+			
+			elif state == STATE_PAGEID:
+				if c == "%":
+					state = STATE_POSLIST
+				elif c == "&":
+					postings.append([int(pageID), []])
+					pageID = ""
+					positions = []
+				elif c == "\n":
+					postings.append([int(pageID), []])
+					pageID = ""
+					positions = []
+					break
+				else:
+					pageID += c
+			
+			elif state == STATE_POSLIST:
+				if c == " ":
+					positions.append(int(position))
+					position = ""
+				elif c == "&":
+					positions.append(int(position))
+					position = ""
+					
+					postings.append([int(pageID), positions])
+					pageID = ""
+					positions = []
+					
+					state = STATE_PAGEID
+				elif c == "\n":
+					positions.append(int(position))
+					position = ""
+					
+					postings.append([int(pageID), positions])
+					pageID = ""
+					positions = []
+					break
+				else:
+					position += c
+		
 		index[word] = postings
-		line = ii_file.readline()
 
 	ii_file.close()
 	return index
@@ -349,6 +395,7 @@ def handle_query(stopwords_set, index, stemmer, query):
 # main function
 def queryIndex(stopwords_filename, ii_filename, ti_filename):
 	index = reconstruct_Index(ii_filename)
+	return
 	stopwords_set = create_stopwords_set(stopwords_filename)
 	# instantiate stemmer to pass into tokenize
 	stemmer = PorterStemmer()
