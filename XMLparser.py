@@ -5,7 +5,6 @@ import heapq # using heap to push docIDs as find them in parse
 import re
 from porter_martin import PorterStemmer
 
-
 # input: filename (fname) of the stopWords file
 # output: set of stopwords
 def create_stopwords_set(fname):
@@ -27,9 +26,9 @@ def replace(textString):
     t = ''
     for ch in textString:
         if ch.isalnum():
-            t = t+ch
+            t += ch
         else:
-            t = t+' '
+            t += ' '
     return t
 
 # input: string to turn into list of tokens
@@ -44,10 +43,8 @@ def tokenize(stopWords_set, stemmer, textString):
     # split textString into list of words   
     text_list = textString.split()
     # 3) filter out all the tokens matching element of stopwords list
-    for word in text_list:
-        if not word in stopWords_set:
-            word = stemmer.stem(word,0,len(word)-1)
-            token_list.append(word)
+    token_list = [stemmer.stem(word, 0, len(word) - 1) for word in text_list if not word in stopWords_set]
+    
     return token_list
 
 

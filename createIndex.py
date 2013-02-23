@@ -6,8 +6,6 @@ from porter_martin import PorterStemmer # instantiate stemmer to pass into token
 
 from XMLparser import parse, tokenize, create_stopwords_set
 
-
-
 # deals with appending to the titleIndex
 # store the pageID and title as they appear -- but we don't really need to store them in a datastructure since we're not doing anything special with them
 # -- just print them out
@@ -33,6 +31,7 @@ def createIndex(stopwords_filename, pagesCollection_filename, ii_filename, ti_fi
 
 	# obtain heap mapping pageID's to tuple (list of title words, list of title and text words)
 	(collection, N) = parse(pagesCollection_filename)
+	
 	#N = len(collection)
 	# iterate over keys (pageID's) to fill the index
 	for i in range(N+1):
@@ -51,7 +50,7 @@ def createIndex(stopwords_filename, pagesCollection_filename, ii_filename, ti_fi
 
 		# tokenize titleString
 		token_list = tokenize(stopWords_set, stemmer, textString)
-
+		
 		# add to index:
 		position = 0
 		for token in token_list:
@@ -76,27 +75,15 @@ def createIndex(stopwords_filename, pagesCollection_filename, ii_filename, ti_fi
 			position += 1
 	# now the index is built
 	titleIndex_file.close() # done writing to titleIndex
-
+	
 	# write out index in format:  word&pageID_0%pos_0 pos_1&pageID_1%pos_0 pos_1 pos2&pageID_2 pos_0
 	#print one line for each word in index 
 	for word in index:
 		w_postings = index[word]
-		invertedIndex_file.write(word) # so far have: "word"
+		invertedIndex_file.write(word)
+		invertedIndex_file.write("".join(["&%s%%%s" % (str(w_postings[i][0]), " ".join([str(x) for x in w_postings[i][1]])) for i in range(len(w_postings))]))
+		invertedIndex_file.write("\n")
 	
-		for i in range(len(w_postings)):
-			post = w_postings[i]
-			page_ID = post[0]
-			positions = post[1]
-			toWrite = "&%s%%%s" % (str(page_ID), " ".join(positions))
-			toWrite += "&"+str(page_ID)
-
-			#invertedIndex_file.write("&"+str(page_ID))  # so far have: "word&page_ID"
-			# write out positions list
-			#invertedIndex_file.write("%"+str(positions[0]))
-			for p in range(1, len(positions)):
-				invertedIndex_file.write(" "+str(positions[p])) # so far have: "word&page_ID%pos_0 pos_1 pos_2, ..."
-
-		invertedIndex_file.write('\n')
 	invertedIndex_file.close()
 	return index
 				
