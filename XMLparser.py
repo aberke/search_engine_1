@@ -49,7 +49,9 @@ def tokenize(stopWords_set, stemmer, textString):
 
 
 #input: filename (fname) of the file collection
-#output: heap with key: pageID, value: tuple (titleString, textString)
+#output: tuple: (dictionary, int):
+#        dictionary with key: pageID, value: tuple (titleString, textString)
+#        maximum pageID found
 
 def parse(fname):
     f = open(fname)
@@ -92,7 +94,6 @@ def parse(fname):
         dictionary[pageID] = (titleString, textString)
         if pageID > maxID:
             maxID = pageID
-        #heapq.heappush(heap, (pageID,(titleString,textString))) #add entry for this page into heap
         currLine = f.readline()
 
     return (dictionary, maxID)

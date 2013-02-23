@@ -32,13 +32,11 @@ def createIndex(stopwords_filename, pagesCollection_filename, ii_filename, ti_fi
 	# obtain heap mapping pageID's to tuple (list of title words, list of title and text words)
 	(collection, N) = parse(pagesCollection_filename)
 	
-	#N = len(collection)
 	# iterate over keys (pageID's) to fill the index
 	for i in range(N+1):
 
 		if not i in collection:
 			continue
-		#item = heapq.heappop(collection)
 		item = collection[i]
 		#pageID = item[0]
 		pageID = i
